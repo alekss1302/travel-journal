@@ -61,3 +61,98 @@ th, td {
   padding: 10px;
   text-align: left;
 }
+
+
+/* Global Styling */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Navbar Styling */
+.navbar {
+  background-color: #333;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.navbar a {
+  color: white;
+  padding: 10px 15px;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.navbar a:hover {
+  background-color: #575757;
+}
+
+/* Footer Styling */
+.footer {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 10px;
+  position: fixed;
+  width: 100%;
+  bottom: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar a {
+      font-size: 14px;
+  }
+
+  table {
+      width: 100%;
+      font-size: 14px;
+  }
+
+  th, td {
+      padding: 5px;
+  }
+
+  form {
+      width: 90%;
+      padding: 15px;
+  }
+
+  .pagination button {
+      padding: 5px;
+      font-size: 12px;
+  }
+}
+
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+}
+
+header nav a {
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+
+.leaflet-container {
+  height: 300px;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}

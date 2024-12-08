@@ -1,59 +1,159 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import UserList from "./UserList";
+import UserForm from "../components/UserForm";
+import UserList from "../components/UserList";
 
 const UserManagement = () => {
-    const [users, setUsers] = useState([]); // Initialize the users state
-    const [message, setMessage] = useState(""); // For user feedback
+    const [users, setUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
+    const [editingUser, setEditingUser] = useState(null);
+    const [message, setMessage] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
 
-    // Fetch users from the backend
     const fetchUsers = async () => {
         try {
             const response = await axios.get(process.env.REACT_APP_USER_RETRIEVE_URL);
-            setUsers(Array.isArray(response.data) ? response.data : []); // Ensure data is an array
-            setMessage(""); // Clear any previous messages
+            console.log("Fetched users response:", response.data);
+    
+            // Extract Documents from the response
+            const usersArray = response.data?.users?.Documents || [];
+            console.log("Extracted users array:", usersArray);
+    
+            setUsers(usersArray); // Set the extracted array in the state
         } catch (error) {
             console.error("Error fetching users:", error);
-            setMessage("Failed to fetch users. Please try again.");
+            setUsers([]); // Ensure users state is an empty array on error
         }
     };
+    
 
-    // Run fetchUsers once when the component mounts
     useEffect(() => {
         fetchUsers();
     }, []);
 
-    // Handle user edit
-    const handleEdit = (user) => {
-        console.log("Edit user:", user);
-        // Implement edit logic here, such as opening a form or modal with user data
-    };
+    // Filter users based on search query
+    useEffect(() => {
+        setFilteredUsers(
+            users.filter((user) =>
+                user.name.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+        );
+    }, [searchQuery, users]);
 
-    // Handle user delete
-    const handleDelete = async (userId) => {
-        if (window.confirm("Are you sure you want to delete this user?")) {
-            try {
-                await axios.delete(`${process.env.REACT_APP_USER_DELETE_URL}/${userId}`);
-                fetchUsers(); // Refresh the users list
-                setMessage("User deleted successfully!");
-            } catch (error) {
-                console.error("Error deleting user:", error);
-                setMessage("Failed to delete user. Please try again.");
+    const handleFormSubmit = async (user) => {
+        try {
+          if (user.userId) {
+            // Update existing user
+            const updatedUser = {
+              ...user,
+              createdAt: user.createdAt, // Preserve original `createdAt`
+            };
+            const url = `${process.env.REACT_APP_USER_UPDATE_URL}`;
+            const response = await axios.put(url, updatedUser, {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+      
+            if (response.status === 200) {
+              setMessage("User updated successfully!");
+              fetchUsers(); // Refresh the user list
+              setEditingUser(null); // Reset editing state
+            } else {
+              setMessage("Failed to update user.");
             }
+          } else {
+            // Create new user
+            const url = `${process.env.REACT_APP_USER_CREATE_URL}`;
+            const response = await axios.post(url, user, {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+      
+            if (response.status === 201) {
+              setMessage("User created successfully!");
+              fetchUsers(); // Refresh the user list
+            } else {
+              setMessage("Failed to create user.");
+            }
+          }
+        } catch (error) {
+          console.error("Error saving user:", error);
+          setMessage("An error occurred.");
+        } finally {
+          setTimeout(() => setMessage(""), 3000); // Clear message after 3 seconds
+        }
+      };
+      
+    
+
+    const handleEdit = (user) => {
+        setEditingUser({
+          userId: user.id,
+          name: user.name,
+          email: user.email,
+          bio: user.bio,
+          createdAt: user.createdAt,
+        });
+      };
+    
+
+    const handleDelete = async (userId) => {
+        if (!window.confirm("Are you sure you want to delete this user?")) return;
+    
+        try {
+            const url = `${process.env.REACT_APP_USER_DELETE_URL}&id=${userId}`;
+            const response = await axios.delete(url, {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+    
+            if (response.status === 200) {
+                setMessage("User deleted successfully!");
+                fetchUsers(); // Refresh the list
+                setTimeout(() => setMessage(""), 3000); // Clear message after 3 seconds
+            } else {
+                setMessage("Failed to delete user.");
+            }
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            setMessage("An error occurred.");
         }
     };
-
+    
+    
     return (
-        <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-            <h1 style={{ textAlign: "center", color: "#333" }}>User Management</h1>
-            {/* Display feedback messages */}
+        <div>
+            <h1 style={{ textAlign: "center", margin: "20px 0" }}>User Management</h1>
             {message && (
-                <div style={{ margin: "10px 0", color: message.startsWith("Failed") ? "red" : "green" }}>
+                <div
+                    style={{
+                        textAlign: "center",
+                        marginBottom: "20px",
+                        color: message.includes("Failed") ? "red" : "green",
+                    }}
+                >
                     {message}
                 </div>
             )}
-            {/* Render the UserList component */}
-            <UserList users={users} onEdit={handleEdit} onDelete={handleDelete} />
+            <div style={{ maxWidth: "500px", margin: "0 auto 20px" }}>
+                <input
+                    type="text"
+                    placeholder="Search users by name..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #ccc",
+                        borderRadius: "5px",
+                    }}
+                />
+            </div>
+            <UserForm onSubmit={handleFormSubmit} initialData={editingUser} />
+            <UserList users={filteredUsers} onEdit={handleEdit} onDelete={handleDelete} />
         </div>
     );
 };
